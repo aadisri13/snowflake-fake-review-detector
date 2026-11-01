@@ -1,0 +1,42 @@
+-- =====================================================
+-- 02: NEAR-DUPLICATE DETECTION (embeddings)
+-- Fake reviewers reuse templates with small rewording.
+-- Embeddings turn text into vectors; similar meaning = similar vectors.
+-- =====================================================
+
+USE WAREHOUSE REVIEWS_WH;
+USE SCHEMA REVIEWS_DB.PUBLIC;
+
+-- 1. Turn every review into a 1024-number vector
+CREATE OR REPLACE TABLE REVIEW_EMBEDDINGS AS
+SELECT REVIEW_ID,
+       AI_EMBED('snowflake-arctic-embed-l-v2.0', REVIEW_TEXT) AS EMB
+FROM REVIEWS_SAMPLE;
+
+-- 2. For each review, find its most similar OTHER review (1.0 = identical meaning)
+CREATE OR REPLACE TABLE REVIEW_SIMILARITY AS
+SELECT A.REVIEW_ID,
+       MAX(VECTOR_COSINE_SIMILARITY(A.EMB, B.EMB)) AS MAX_SIMILARITY
+FROM REVIEW_EMBEDDINGS A
+JOIN REVIEW_EMBEDDINGS B
+  ON A.REVIEW_ID <> B.REVIEW_ID
+GROUP BY A.REVIEW_ID;
+
+-- 3. SIGNAL 2: are fakes more copy-pasted than real reviews?
+SELECT S.LABEL,
+       ROUND(AVG(M.MAX_SIMILARITY), 3)      AS AVG_MAX_SIMILARITY,
+       COUNT_IF(M.MAX_SIMILARITY >= 0.85)   AS NEAR_DUPLICATES
+FROM REVIEW_SIMILARITY M
+JOIN REVIEWS_SAMPLE S USING (REVIEW_ID)
+GROUP BY S.LABEL;
+
+-- 4. Look at the closest pairs yourself
+SELECT A.REVIEW_ID, B.REVIEW_ID AS MATCH_ID,
+       ROUND(VECTOR_COSINE_SIMILARITY(A.EMB, B.EMB), 3) AS SIMILARITY,
+       SA.REVIEW_TEXT AS REVIEW_A, SB.REVIEW_TEXT AS REVIEW_B
+FROM REVIEW_EMBEDDINGS A
+JOIN REVIEW_EMBEDDINGS B ON A.REVIEW_ID < B.REVIEW_ID
+JOIN REVIEWS_SAMPLE SA ON SA.REVIEW_ID = A.REVIEW_ID
+JOIN REVIEWS_SAMPLE SB ON SB.REVIEW_ID = B.REVIEW_ID
+ORDER BY SIMILARITY DESC
+LIMIT 20;
