@@ -1,4 +1,4 @@
-# 🕵️ Fake Review Detector on Snowflake
+#  Fake Review Detector on Snowflake
 
 Flags fake, computer-generated product reviews using **Snowflake Cortex AI**, a model trained with **Snowpark**, auto-updating **dynamic tables**, and a **Streamlit** app where you can ask questions about the data in plain English (**Cortex Analyst**).
 
@@ -6,7 +6,7 @@ Everything runs inside Snowflake: no external APIs, and the data never leaves th
 
 ---
 
-## 📦 Dataset
+##  Dataset
 
 [Fake Reviews Dataset](https://www.kaggle.com/datasets/mexwell/fake-reviews-dataset) (Kaggle): **40,432 Amazon-style product reviews**, 50/50 split
 - `OR`: original reviews written by real customers
@@ -18,7 +18,7 @@ The labels are only used at the end, to measure accuracy. The detector never see
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Kaggle CSV ──► RAW_REVIEWS (40,432 rows)
@@ -43,7 +43,7 @@ New reviews ──► INCOMING_REVIEWS ──► 07 dynamic tables ──► aut
 
 ---
 
-## 🔍 How it works
+##  How it works
 
 | Signal | Snowflake feature | What it catches | Points |
 |---|---|---|---|
@@ -55,7 +55,7 @@ A review scoring **≥ 30** is flagged as likely fake.
 
 ---
 
-## 📊 Results (example run, 2,000-review sample)
+##  Results (example run, 2,000-review sample)
 
 | Approach | Accuracy | Notes |
 |---|---|---|
@@ -72,7 +72,7 @@ Numbers shift slightly between runs because file 01 draws a random sample.
 
 ---
 
-## 📁 Files
+##  Files
 
 | File | What it does |
 |---|---|
@@ -88,7 +88,7 @@ Numbers shift slightly between runs because file 01 draws a random sample.
 
 ---
 
-## ▶️ How to run
+##  How to run
 
 1. Create a Snowflake account with Cortex AI enabled (Cortex AI functions are not available on card-free self-service trials)
 2. Create a warehouse `REVIEWS_WH` and database `REVIEWS_DB`
@@ -99,18 +99,14 @@ Numbers shift slightly between runs because file 01 draws a random sample.
 
 ---
 
-## 🧰 Tech used
+##  Tech used
 
 Snowflake SQL (CTEs, window functions, self-joins) · Cortex AI functions (`AI_SENTIMENT`, `AI_EMBED`, `AI_CLASSIFY`) · Vector similarity · Snowpark Python · scikit-learn · Dynamic tables · Semantic views · Cortex Analyst · Streamlit in Snowflake
 
-## ⚠️ Limitations
+##  Limitations
 
 - Evaluated on one research dataset; real-world fake reviews may behave differently
 - ~72% accuracy: some real reviews get flagged and some fakes slip through
 - Signal weights and the 30-point cut-off were tuned on the same sample (the Snowpark model is evaluated on held-out data)
 
-## 🚀 Future work
 
-- Train a stronger classifier (e.g. gradient boosting) with more text features
-- Add reviewer-level signals (posting bursts, account behaviour) on a dataset that has them
-- Schedule the full pipeline with tasks
